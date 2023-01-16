@@ -6,7 +6,6 @@ import ResponsiveAppBar from './components/AppBar';
 import { Navbar } from './components';
 import Router from './routes';
 
-
 export default function App() {
   return (
     <Box sx={{p:'0',display:'flex',flexDirection:'row',minHeight:'100vh'}}>

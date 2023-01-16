@@ -33,12 +33,16 @@ const ActionsBar = ({setOpen,setEditStage,setOpenCols})=>{
     </IconButton>
     </Stack>
 )}
-const Row = ({row,colKeys})=>(
-    <Stack flexDirection={'row'} alignItems="center" sx={{borderBottom:'1px solid #eee',padding:'.5rem .5rem .5rem .75rem', ':hover':{background:'#eee'},transition:'.3s'}}>
-        {colKeys.map((col,index)=><div key={index} style={{width:col==='id'?'50px':'150px',overflow:'hidden'}}>{row[col]}</div>)}
+const Row = ({row,colKeys,setData})=>{
+    const addData = (row)=>{
+        setData(prev=>[...prev,row])
+    }
+    return(
+    <Stack flexDirection={'row'} alignItems="center" sx={{borderBottom:'1px solid #eee',padding:'.5rem .5rem .5rem .75rem', cursor:'pointer', ':hover':{background:'#eee'},transition:'.3s'}}>
+        {colKeys.map((col,index)=><div key={index} onClick={()=>addData(row)} style={{width:col==='id'?'50px':'150px',overflow:'hidden'}}>{row[col]}</div>)}
     </Stack>
 )
-
+}
 const columns = [
     { id:1, field: 'id', headerName: 'id', width: 150,type:'number' },
     { id:2, field: 'first_name', headerName: 'First Name', width: 150,type:'text' },
@@ -175,7 +179,7 @@ export default function Table() {
         {/* ((!show)?data:data.filter(({id})=>selected.includes(id))) */}
         {/* ((!show)?filtredData:filtredData.filter(({id})=>selected.includes(id))) */}
 
-        {((!show)?filtredData:filtredData.filter(({id})=>selected.includes(id))).map((row)=>(<Row key={row.id} colKeys={colKeys} row={row} />))}
+        {((!show)?filtredData:filtredData.filter(({id})=>selected.includes(id))).map((row)=>(<Row key={row.id} setData={setData} colKeys={colKeys} row={row} />))}
 
         {open&&<InputsDialog open={open} saveChanges={saveChanges} setOpen={setOpen} reference={ref} showencols={showencols} columns={columns} stage={stage} />}
 

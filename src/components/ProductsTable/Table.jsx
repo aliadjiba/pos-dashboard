@@ -3,67 +3,63 @@ import React, { useEffect, useState } from 'react';
 import Checkbox from '@mui/material/Checkbox';
 import Dialog from './Dialog';
 import ActionsBar from './ActionsBar';
+import SearchDialog from './SearchDialog';
 import Header from './Header';
 import Row from './Row';
 import { useRef } from 'react';
-import rows from '../../assets/MOCK_DATA.json';
-import SearchDialog from './SearchDialog';
+import { useMemo } from 'react';
+import useToggle from '../../hooks/useToggle';
 
-// const toObjectKeys=(array)=>{
-//     let obj = {};
-//     array.forEach(element => {
-//         obj={...obj,[element]:''}
-//     });
-//     return obj
-// }
-//const colKeys = columns.map(column=>column.field)
-//
+const TabSettings = ({state,toggle,reference,showencols,columns,closToggle})=>(
+    <Dialog doAction={()=>{}} open={state} setOpen={(state)=>toggle('columnsList',state)}>
+        <Stack ref={reference} sx={{gap:'25px'}} component={FormGroup}>
+        {columns.map((item)=>
+            <FormControlLabel key={item.id} control={<Checkbox checked={showencols.includes(item)} inputProps={{'aria-label': 'Checkbox demo',onClick:()=>closToggle(item)}} />} label={item.headerName} />
+        )}
+        </Stack>
+    </Dialog>
+)
 
-const columns = [
-    { id:1, field: 'id', headerName: 'id', width: 150,type:'number' },
-    { id:2, field: 'first_name', headerName: 'First Name', width: 150,type:'text' },
-    { id:3, field: 'last_name', headerName: 'Last Name', width: 150,type:'text' },
-    { id:4, field: 'gender', headerName: 'Gender', width: 150,type:'text' },
-    { id:5, field: 'email', headerName: 'Email', width: 150,type:'text' },
-    // { field: 'ip_address', headerName: 'IP Address', width: 150 },
-];
-
-const ColsDialog = ({openCols,setOpenCols,reference,showencols,columns,closToggle})=>(<Dialog doAction={()=>{}} open={openCols} setOpen={setOpenCols}>
-<Stack ref={reference} sx={{gap:'25px'}} component={FormGroup}>
-{columns.map((item)=>
-    <FormControlLabel key={item.id} control={<Checkbox checked={showencols.includes(item)} inputProps={{'aria-label': 'Checkbox demo',onClick:()=>closToggle(item)}} />} label={item.headerName} />
-)}
-</Stack>
-</Dialog>)
-
-const InputsDialog = ({open,setOpen,showencols,columns,stage,reference,saveChanges})=>(<Dialog doAction={saveChanges} open={open} setOpen={setOpen}>
+const InputsDialog = ({open,toggle,showencols,columns,stage,reference,saveChanges})=>(
+<Dialog doAction={saveChanges} open={open} setOpen={(state)=>toggle('editDrawer',state)}>
     <Stack ref={reference} sx={{gap:'25px'}}>
     {(stage.mode==='edit'?showencols:columns).map((item)=>
     <TextField key={item.id} id={`outlined-basic-${item.id}`} label={item.headerName} variant="outlined" name={item.field} defaultValue={stage.mode==='edit'?stage.values[item.field]:''} type={item.type}/>
     )}
     </Stack>
-</Dialog>)
+</Dialog>
+)
 
 
-export default function Table() {
+export default function Table({rows,columns,status}) {
+    //states for drawers
+    const [state,toggle] = useToggle(['editDrawer','columnsList','showRows','searchDialog']);
+    //state for input
     const [input, setInput] = useState('');
-    const [open, setOpen] = useState(false);
-    const [openCols, setOpenCols] = useState(false);
-    const [show, setShow] = useState(false);
-    const [searchDialog, setSearchDialog] = useState(true);
-    const [data, setData] = useState(rows);
-    const [filtredData, setFiltredData] = useState(rows);
+    //to save data
+    const data= useMemo(()=>rows?rows:[],[rows]);
+    //to filter data
+    const [filtredData, setFiltredData] = useState([]);
+    //to keep edit item
     const [stage, setStage] = useState({mode:'create',values:{}});
+    //selecting list
     const [selected, setSelect] = useState([]);
+    //columns must be showen 
     const [showencols, setShowencols] = useState(columns);
-    const [colKeys, setColKeys] = useState(showencols.map(column=>column.field));
+    const colKeys = useMemo(()=>showencols.map(column=>column.field),[showencols]);
+    //how to sort
+    const [srotingField, setSrotingField] = useState({prev:null,current:'id'});
+    //ref to get inputs
     const ref = useRef(null);
-    useEffect(() => {
-        setColKeys(showencols.map(column=>column.field));
-    }, [showencols]);
-    useEffect(() => {
-        console.log(filtredData);
-    }, [filtredData]);
+    
+    // useEffect(() => {
+    //     if (srotingField.current===srotingField.prev) {
+    //         setFiltredData(prev=>(prev.reverse()));
+    //     }else{
+    //         setFiltredData(prev=>(prev.sort((a,b) => (a[srotingField.current] > b[srotingField.current]) ? 1 : ((b[srotingField.current] > a[srotingField.current]) ? -1 : 0))));
+    //     }
+    // }, [srotingField,data]);
+
     useEffect(() => {
         const tempfiltredData = data.filter(item=>{
             let x = false;
@@ -76,32 +72,20 @@ export default function Table() {
             return x
         })
         setFiltredData(tempfiltredData);
-    }, [input]);
-    const isSelected = (id)=>selected.includes(id);
-    const select = (id)=>{
-        if (!isSelected(id)) {
-        setSelect(prev=>[...prev,id]);
-        }
-    }
-    const unselect = (id)=>{
-        setSelect(prev=>prev.filter(prevId=>id!=prevId));
-    }
-    const clickHandler = (id)=>{
-        console.log(ref.current)
-        if (isSelected(id)) {
-        unselect(id)
-        }else{
-        select(id)
-        }
-    }
-    const selectAll = ()=>data.length>0&&setSelect(data.map(row=>row.id));
-    const unSelectAll = ()=>setSelect([]);
-    const handleAllSelection = ()=>selected.length===data.length?unSelectAll():selectAll();
-    const deleteItems = ()=>{
-        setData(prev=>prev.filter((item=>!selected.includes(item.id))))
+    }, [input,data]);
+
+    function isSelected(id) {return selected.includes(id)}
+    function select(id) {if(!isSelected(id)) setSelect(prev=>[...prev,id])}
+    function unselect(id) {setSelect(prev=>prev.filter(prevId=>id!=prevId))}
+    function clickHandler(id) {return isSelected(id)?unselect(id):select(id)}
+    function selectAll(){return data.length>0&&setSelect(data.map(row=>row.id))}
+    function unSelectAll(){setSelect([])}
+    function handleAllSelection(){return selected.length===data.length?unSelectAll():selectAll()}
+    function deleteItems(){
+        //setData(prev=>prev.filter((item=>!selected.includes(item.id))))
         setSelect([])
     }
-    const setEditStage = (mode)=>{
+    function setEditStage(mode){
         const id = selected[0];
         if (mode==='create') {
         setStage({mode:'create',values:{}});
@@ -110,7 +94,7 @@ export default function Table() {
         setStage(selected.length==1?{mode:mode,values:data.find(item=>item.id==id)}:{mode:'create',values:{}})
         }
     }
-    const saveChanges = ()=>{
+    function saveChanges(){
         //this const is to keep new values in the inputs
         const currentValues = {};
         //get all inputs inside the reference
@@ -149,11 +133,12 @@ export default function Table() {
         //sorting the new data
         tempData.sort((a,b) => (a.id > b.id) ? 1 : ((b.id > a.id) ? -1 : 0));
         //save states
-        setData(tempData);
+
+        //setData(tempData);
         }
         setStage({mode:'create',values:{}});
     }
-    const closToggle = (currentItem)=>{
+    function closToggle(currentItem){
         const index = showencols.indexOf(currentItem);
         if (showencols.length<=1&&index>=0) {
         return;
@@ -167,19 +152,20 @@ export default function Table() {
     }
     return (
     <Box sx={{position:'relative', height: '555px', width: '100%',overflow:'auto','::-webkit-scrollbar':{width:'7px',height:'7px'},'&::-webkit-scrollbar-thumb':{background:'#ccc',borderRadius:'5px'},'::-webkit-scrollbar-track':{background:'#eee',borderRadius:'5px'}}}>
-            <MuiAppBar position="sticky">
-        <ActionsBar setSearchDialog={setSearchDialog} input={input} setInput={setInput} show={show} setShow={setShow} selectedLength={selected.length} deleteItems={deleteItems} setOpen={setOpen} setEditStage={setEditStage} setOpenCols={setOpenCols} />
-        <Header  selectedLength={selected.length} dataLength={data.length} columns={showencols} handleAllSelection={handleAllSelection} />
-    </MuiAppBar>
+        <MuiAppBar position="sticky">
+
+        <ActionsBar input={input} setInput={setInput} show={state} selectedLength={selected.length} deleteItems={deleteItems} toggle={toggle} setEditStage={setEditStage} />
+
+        <Header setSrotingField={setSrotingField} selectedLength={selected.length} dataLength={data.length} columns={showencols} handleAllSelection={handleAllSelection} />
+        </MuiAppBar>
         {/* ((!show)?data:data.filter(({id})=>selected.includes(id))) */}
         {/* ((!show)?filtredData:filtredData.filter(({id})=>selected.includes(id))) */}
-        {((!show)?filtredData:filtredData.filter(({id})=>selected.includes(id))).map((row)=>(<Row key={row.id} clickHandler={clickHandler} isSelected={isSelected} colKeys={colKeys} row={row} />))}
+        {status=='loading'?"Loading":filtredData.map((row)=>(<Row key={row.id} clickHandler={clickHandler} isSelected={isSelected} colKeys={colKeys} row={row} />))}
 
-        {open&&<InputsDialog open={open} saveChanges={saveChanges} setOpen={setOpen} reference={ref} showencols={showencols} columns={columns} stage={stage} />}
+        {state['editDrawer']&&<InputsDialog open={state['editDrawer']} saveChanges={saveChanges} toggle={toggle} reference={ref} showencols={showencols} columns={columns} stage={stage} />}
 
-        {openCols&&<ColsDialog openCols={openCols} setOpenCols={setOpenCols} reference={ref} showencols={showencols} columns={columns} closToggle={closToggle} />}
-        
-        <SearchDialog open={searchDialog} setOpen={setSearchDialog} />
+        {state['columnsList']&&<TabSettings state={state['columnsList']} toggle={toggle} reference={ref} showencols={showencols} columns={columns} closToggle={closToggle} />}
+        <SearchDialog open={state['searchDialog']} setOpen={(state)=>toggle('editDrawer',state)} />
     </Box>
     )
 }
