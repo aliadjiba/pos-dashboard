@@ -3,13 +3,16 @@ import InputBase from '@mui/material/InputBase';
 import SearchIcon from '@mui/icons-material/Search';
 
 const Search = styled('div')(({ theme }) => ({
-    color:'#323232',
+    border: '1px solid #ccc',
+    borderRadius: '10px',
+    background: '#fff',
+    color:'#777',
     position: 'relative',
     transition:'.3s',
-    borderRadius: theme.shape.borderRadius,
-    backgroundColor: alpha(theme.palette.common.black, 0.10),
+    // borderRadius: theme.shape.borderRadius,
+    backgroundColor: alpha(theme.palette.common.white, 1),
     '&:hover': {
-        backgroundColor: alpha(theme.palette.common.black, 0.15),
+        backgroundColor: alpha(theme.palette.common.black, 0.05),
     },
     marginRight: theme.spacing(2),
     marginLeft: 0,

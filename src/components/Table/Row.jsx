@@ -1,11 +1,5 @@
 import {  Stack } from '@mui/material';
 import Checkbox from '@mui/material/Checkbox';
-const rowOptions={
-  showDetailsPerEach:false,
-  checkBox:false,
-  colorContrast:false,
-}
-const vax=`backgroundColor:isSelected(row.id)?'#c8e6c9':(options.colorContrast?(index%2===1?'#eee':'#fff'):'#fff')`;
 
 export default ({row,options,clickHandler,isSelected,colKeys,index})=>{
   const style={

@@ -1,50 +1,34 @@
-import { AppBar, Box, FormControlLabel, FormGroup, Stack, TextField } from '@mui/material';
+import { AppBar, Box } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import Checkbox from '@mui/material/Checkbox';
-import Dialog from './Dialog';
 import ActionsBar from './ActionsBar';
-import Header from './Header';
-import Row from './Row';
 import { useRef } from 'react';
 import { useMemo } from 'react';
 import useToggle from '../../hooks/useToggle';
 import TableContent from './TableContent';
+import { grey } from '@mui/material/colors';
+import Tabs from './Tabs';
+import SearshBox from './SearshBox';
+import TableSettings from './TableSetting';
+// import CreateDialog from './CreateDialog';
 
 const rowOptions={
     showDetailsPerEach:false,
     checkBox:false,
     colorContrast:true,
-    ContrastBg:'#ddd',
-    hoverBg:'#efe',
+    ContrastBg:grey[100],
+    hoverBg:grey[200],
     create:false,
     update:false,
     delete:false,
     search:true
 }
 
-const TabSettings = ({state,toggle,reference,showencols,columns,closToggle})=>(
-    state&&<Dialog doAction={()=>{}} open={state} setOpen={(state)=>toggle('columnsList',state)}>
-        <Stack ref={reference} sx={{gap:'25px'}} component={FormGroup}>
-        {columns.map((item)=>
-            <FormControlLabel key={item.id} control={<Checkbox checked={showencols.includes(item)} inputProps={{'aria-label': 'Checkbox demo',onClick:()=>closToggle(item)}} />} label={item.headerName} />
-        )}
-        </Stack>
-    </Dialog>
-)
-const InputsDialog = ({state,toggle,showencols,columns,stage,reference,saveChanges})=>(
-    state&&<Dialog doAction={saveChanges} open={state} setOpen={(state)=>toggle('editDrawer',state)}>
-    <Stack ref={reference} sx={{gap:'25px'}}>
-    {(stage.mode==='edit'?showencols:columns).map((item)=>
-    <TextField key={item.id} id={`outlined-basic-${item.id}`} label={item.headerName} variant="outlined" name={item.field} defaultValue={stage.mode==='edit'?stage.values[item.field]:''} type={item.type}/>
-    )}
-    </Stack>
-</Dialog>
-)
-export default function Table({rows,columns,status}) {
+export default function Table({rows,columns,status,tabs,children}) {
     //states for drawers
     const [state,toggle] = useToggle(['editDrawer','columnsList','showRows']);
     //state for input
     const [input, setInput] = useState('');
+    const [value, setValue] = useState('1');
     //to save data
     const data= useMemo(()=>rows?rows:[],[rows]);
     //to filter data
@@ -93,6 +77,9 @@ export default function Table({rows,columns,status}) {
     function deleteItems(){
         //setData(prev=>prev.filter((item=>!selected.includes(item.id))))
         setSelect([])
+    }
+    function handleChange(event, newValue){
+        setValue(newValue)
     }
     function setEditStage(mode){
         const id = selected[0];
@@ -161,15 +148,18 @@ export default function Table({rows,columns,status}) {
     }
     return (
     <Box sx={{position:'relative', height: '555px', width: '100%'}}>
-        <AppBar position="static">
-            <ActionsBar rowOptions={rowOptions} input={input} setInput={setInput} show={state} selectedLength={selected.length} deleteItems={deleteItems} toggle={toggle} setEditStage={setEditStage} />
+        
+        <AppBar position="static" sx={{boxShadow:'none'}}>
+        
+            <Tabs value={value} data={tabs} handleChange={handleChange} />
+            {children}
         </AppBar>
 
         <TableContent {...{rowOptions,setSrotingField,selectedLength:selected.length,dataLength:data.length,showencols,handleAllSelection,status,clickHandler,isSelected,colKeys,data:filtredData }} />
 
-        <InputsDialog open={state['editDrawer']} saveChanges={saveChanges} toggle={toggle} reference={ref} showencols={showencols} columns={columns} stage={stage} />
+        {/* <InputsDialog open={state['editDrawer']} saveChanges={saveChanges} toggle={toggle} reference={ref} showencols={showencols} columns={columns} stage={stage} /> */}
 
-        <TabSettings state={state['columnsList']} toggle={toggle} reference={ref} showencols={showencols} columns={columns} closToggle={closToggle} />
+        <TableSettings state={state['columnsList']} toggle={toggle} reference={ref} showencols={showencols} columns={columns} closToggle={closToggle} />
 
     </Box>
     )
